@@ -69,17 +69,13 @@ jobs:
 
       - name: Build Docker Model
         run: |
-          wget https://bootstrap.pypa.io/pip/3.9/get-pip.py -O /tmp/get-pip.py
-          python -m http.server 8080 --directory /tmp &
-          SERVER_PID=$!
-          sleep 2
-          echo "127.0.0.1 bootstrap.pypa.io" | sudo tee -a /etc/hosts
-          sudo iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1 --dport 80 -j REDIRECT --to-ports 8080
-          sudo iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1 --dport 443 -j REDIRECT --to-ports 8080
+          # 1. Cari lokasi paket MLflow di site-packages dan ubah template python3.9 ke python3.10
+          MLFLOW_PATH=$(python -c "import mlflow, os; print(os.path.dirname(mlflow.__file__))")
+          echo "Patching MLflow template at $MLFLOW_PATH"
+          find "$MLFLOW_PATH" -type f \( -name "*.py" -o -name "Dockerfile*" \) -exec sed -i 's/python3.9/python3.10/g' {} +
 
-          mlflow models build-docker -m "mlruns/0/${{ env.RUN_ID }}/artifacts/model" -n "animal-classification-model" --enable-mlserver
-
-          kill $SERVER_PID
+          # 2. Jalankan perintah asli mlflow models build-docker sesuai kriteria
+          mlflow models build-docker -m "mlruns/0/${{ env.RUN_ID }}/artifacts/model" -n "5_animal_classification" --enable-mlserver
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -89,8 +85,8 @@ jobs:
 
       - name: Tag Docker Image
         run: |
-          docker tag animal-classification-model:latest ${{ secrets.DOCKERHUB_USERNAME }}/animal-classification-model:latest
+          docker tag 5_animal_classification:latest ${{ secrets.DOCKERHUB_USERNAME }}/5_animal_classification:latest
 
       - name: Push Docker Image
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/animal-classification-model:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/5_animal_classification:latest
