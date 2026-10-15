@@ -9,40 +9,36 @@ jobs:
   train-and-build:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write  # Memberikan izin push ke repo
+
     steps:
-      # 1. Set up job & Checkout repository
       - name: Run actions/checkout@v3
         uses: actions/checkout@v3
 
-      # 2. Set up Python
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
-      # 3. Check Env
       - name: Check Env
         run: |
           python --version
           pip --version
 
-      # 4. Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install "numpy<2.0" "tensorflow==2.18.0" "mlflow==2.19.0" scikit-learn matplotlib cloudpickle mlserver mlserver-mlflow
 
-      # 5. Set MLflow Tracking URI (Local artifacts)
       - name: Set MLflow Tracking URI
         run: |
           echo "MLFLOW_TRACKING_URI=file://${{ github.workspace }}/mlruns" >> $GITHUB_ENV
 
-      # 6. Run mlflow project
       - name: Run mlflow project
         run: |
           mlflow run MLProject --env-manager local
 
-      # 7. Get latest MLflow run_id
       - name: Get latest MLflow run_id
         id: get_run_id
         run: |
@@ -50,38 +46,51 @@ jobs:
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "MLflow Run ID: $RUN_ID"
 
-      # 8. Install Python dependencies (pemasangan pendukung bila diperlukan)
+      # === TAHAP TAMBAHAN: COMMIT & PUSH ARTEFAK KE GITHUB REPOSITORY ===
+      - name: Save Artifacts to GitHub Repository
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Tambahkan folder artefak dan mlruns ke git tracking
+          git add -f mlruns/ artifacts/ MLProject/last_run_id.txt || true
+          
+          # Lakukan commit jika ada perubahan file
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(ci): auto-save MLflow artifacts for run ${{ env.RUN_ID }} [skip ci]"
+            git push origin main
+          else
+            echo "Tidak ada perubahan artefak untuk di-commit."
+          fi
+
       - name: Install Python dependencies
         run: |
           pip install wheel
 
-      # 9. Upload Artifacts (Pengganti Google Drive: Simpan Artefak ke GitHub Artifacts)
-      - name: Upload to Artifacts Repository
-        uses: actions/upload-artifact@v4
-        with:
-          name: mlflow-artifacts
-          path: mlruns/
-
-      # 10. Build Docker Model menggunakan mlflow build-docker
       - name: Build Docker Model
-        env:
-          MLFLOW_DOCKER_PYTHON_VERSION: "3.10"
         run: |
-          mlflow models build-docker -m "mlruns/0/${{ env.RUN_ID }}/artifacts/model" -n "5_animal_classification" --enable-mlserver
+          wget https://bootstrap.pypa.io/pip/3.9/get-pip.py -O /tmp/get-pip.py
+          python -m http.server 8080 --directory /tmp &
+          SERVER_PID=$!
+          sleep 2
+          echo "127.0.0.1 bootstrap.pypa.io" | sudo tee -a /etc/hosts
+          sudo iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1 --dport 80 -j REDIRECT --to-ports 8080
+          sudo iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1 --dport 443 -j REDIRECT --to-ports 8080
 
-      # 11. Log in to Docker Hub
+          mlflow models build-docker -m "mlruns/0/${{ env.RUN_ID }}/artifacts/model" -n "animal-classification-model" --enable-mlserver
+
+          kill $SERVER_PID
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 12. Tag Docker Image
       - name: Tag Docker Image
         run: |
-          docker tag 5_animal_classification:latest ${{ secrets.DOCKERHUB_USERNAME }}/5_animal_classification:latest
+          docker tag animal-classification-model:latest ${{ secrets.DOCKERHUB_USERNAME }}/animal-classification-model:latest
 
-      # 13. Push Docker Image
       - name: Push Docker Image
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/5_animal_classification:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/animal-classification-model:latest

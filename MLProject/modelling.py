@@ -1,6 +1,6 @@
 
 from pathlib import Path
-
+import shutil
 import mlflow
 import mlflow.tensorflow
 import tensorflow as tf
@@ -12,9 +12,8 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 # 1. KONFIGURASI
 
 BASE_DIR = Path(__file__).resolve().parent
-PROJECT_DIR = BASE_DIR.parent
 
-DATA_DIR = PROJECT_DIR / "MLProject/dataset_5_class_animal_preprocessing"
+DATA_DIR = BASE_DIR / "dataset_5_class_animal_preprocessing"
 
 TRAIN_DIR = DATA_DIR / "train"
 VAL_DIR = DATA_DIR / "validation"
@@ -228,14 +227,25 @@ with mlflow.start_run(run_name="CNN_From_Scratch") as run:
 
     plt.close(fig)
 
-    # 7. SIMPAN RUN_ID KE FILE
-    with open("last_run_id.txt", "w") as f:
-        f.write(run.info.run_id)
+    # 8. CATAT RUN_ID UNTUK PIPELINE CI/CD
+    run_id = run.info.run_id
+    with open(BASE_DIR / "last_run_id.txt", "w") as f:
+        f.write(run_id)
 
-    print("MLflow Run ID:", run.info.run_id)
+
+    # 9. EKSPOR ARTEFAK KE FOLDER REPOSITORY 'artifacts/'
+    repo_root = BASE_DIR.parent
+    source_artifacts = repo_root / f"mlruns/0/{run_id}/artifacts"
+    target_artifacts = repo_root / "artifacts"
+
+    if source_artifacts.exists():
+        if target_artifacts.exists():
+            shutil.rmtree(target_artifacts)
+        shutil.copytree(source_artifacts, target_artifacts)
+        print(f"\n[INFO] Artefak berhasil disalin dari {source_artifacts} ke {target_artifacts}")
 
 
-    # 8. RINGKASAN HASIL
+    # 10. RINGKASAN HASIL
 
     print("\n" + "=" * 55)
     print("HASIL EKSPERIMEN CNN BASIC")
@@ -246,7 +256,6 @@ with mlflow.start_run(run_name="CNN_From_Scratch") as run:
     print("\nClassification Report:")
     print(report)
     print("MLflow Run ID:", run.info.run_id)
-    print("Tracking URI:", mlflow.get_tracking_uri())
     print("=" * 55)
 
 print("\nEksperimen Basic selesai.")
