@@ -15,12 +15,12 @@ flavors:
     save_format: tf
 mlflow_version: 2.19.0
 model_size_bytes: 1371908
-model_uuid: ca4bb3fdedda41afaefa8c711acd7a49
-run_id: 678a60eafaeb4c91bcc7fbb4189f99c6
+model_uuid: af02e7dffc8b46cda25d8205d4786ec1
+run_id: 3584b927632544d69a3dd571f0389d75
 signature:
   inputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float32", "shape": [-1, 224,
     224, 3]}}]'
   outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float32", "shape": [-1,
     5]}}]'
   params: null
-utc_time_created: '2026-10-15 15:06:28.886544'
+utc_time_created: '2026-10-15 16:05:54.347826'

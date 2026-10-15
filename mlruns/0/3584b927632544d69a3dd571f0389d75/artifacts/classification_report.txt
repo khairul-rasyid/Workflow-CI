@@ -1,0 +1,11 @@
+              precision    recall  f1-score   support
+
+         cat       0.69      0.79      0.74       253
+         cow       0.70      0.66      0.68       259
+         dog       0.66      0.53      0.59       251
+    elephant       0.74      0.90      0.81       255
+       horse       0.70      0.63      0.67       268
+
+    accuracy                           0.70      1286
+   macro avg       0.70      0.70      0.70      1286
+weighted avg       0.70      0.70      0.70      1286
