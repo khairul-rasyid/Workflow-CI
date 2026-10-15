@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write  # Memberikan izin push ke repo
+      contents: write
 
     steps:
       - name: Run actions/checkout@v3
@@ -46,16 +46,13 @@ jobs:
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "MLflow Run ID: $RUN_ID"
 
-      # === TAHAP TAMBAHAN: COMMIT & PUSH ARTEFAK KE GITHUB REPOSITORY ===
       - name: Save Artifacts to GitHub Repository
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Tambahkan folder artefak dan mlruns ke git tracking
           git add -f mlruns/ artifacts/ MLProject/last_run_id.txt || true
           
-          # Lakukan commit jika ada perubahan file
           if ! git diff --staged --quiet; then
             git commit -m "chore(ci): auto-save MLflow artifacts for run ${{ env.RUN_ID }} [skip ci]"
             git push origin main
@@ -69,12 +66,9 @@ jobs:
 
       - name: Build Docker Model
         run: |
-          # 1. Cari lokasi paket MLflow di site-packages dan ubah template python3.9 ke python3.10
           MLFLOW_PATH=$(python -c "import mlflow, os; print(os.path.dirname(mlflow.__file__))")
-          echo "Patching MLflow template at $MLFLOW_PATH"
-          find "$MLFLOW_PATH" -type f \( -name "*.py" -o -name "Dockerfile*" \) -exec sed -i 's/python3.9/python3.10/g' {} +
-
-          # 2. Jalankan perintah asli mlflow models build-docker sesuai kriteria
+          find "$MLFLOW_PATH" -type f \( -name "*.py" -o -name "Dockerfile*" \) -exec sed -i 's|https://bootstrap.pypa.io/get-pip.py|https://bootstrap.pypa.io/pip/3.9/get-pip.py|g' {} +
+          
           mlflow models build-docker -m "mlruns/0/${{ env.RUN_ID }}/artifacts/model" -n "5_animal_classification" --enable-mlserver
 
       - name: Log in to Docker Hub
