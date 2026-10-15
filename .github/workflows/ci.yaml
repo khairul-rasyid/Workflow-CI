@@ -15,10 +15,10 @@ jobs:
         uses: actions/checkout@v3
 
       # 2. Set up Python
-      - name: Set up Python 3.12.7
-        uses: actions/checkout@v3
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.12.7"
+          python-version: "3.10"
 
       # 3. Check Env
       - name: Check Env
@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install "numpy<2.0" "tensorflow==2.18.0" "mlflow==2.19.0" scikit-learn matplotlib cloudpickle mlserver
+          pip install "numpy<2.0" "tensorflow==2.18.0" "mlflow==2.19.0" scikit-learn matplotlib cloudpickle mlserver mlserver-mlflow
 
       # 5. Set MLflow Tracking URI (Local artifacts)
       - name: Set MLflow Tracking URI
@@ -64,8 +64,10 @@ jobs:
 
       # 10. Build Docker Model menggunakan mlflow build-docker
       - name: Build Docker Model
+        env:
+          MLFLOW_DOCKER_PYTHON_VERSION: "3.10"
         run: |
-          mlflow models build-docker -m "mlruns/0/${{ env.RUN_ID }}/artifacts/model" -n "animal-classification-model" --enable-mlserver
+          mlflow models build-docker -m "mlruns/0/${{ env.RUN_ID }}/artifacts/model" -n "5_animal_classification" --enable-mlserver
 
       # 11. Log in to Docker Hub
       - name: Log in to Docker Hub
@@ -77,9 +79,9 @@ jobs:
       # 12. Tag Docker Image
       - name: Tag Docker Image
         run: |
-          docker tag animal-classification-model:latest ${{ secrets.DOCKERHUB_USERNAME }}/animal-classification-model:latest
+          docker tag 5_animal_classification:latest ${{ secrets.DOCKERHUB_USERNAME }}/5_animal_classification:latest
 
       # 13. Push Docker Image
       - name: Push Docker Image
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/animal-classification-model:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/5_animal_classification:latest
