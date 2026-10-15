@@ -1,0 +1,15 @@
+artifact_uri: file:///home/runner/work/Workflow-CI/Workflow-CI/mlruns/0/a0f2d4bb27604b4583a42a246bfb2e95/artifacts
+end_time: 1792074808162
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: a0f2d4bb27604b4583a42a246bfb2e95
+run_name: nervous-bass-193
+run_uuid: a0f2d4bb27604b4583a42a246bfb2e95
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1792074464267
+status: 3
+tags: []
+user_id: runner
