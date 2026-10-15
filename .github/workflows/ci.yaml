@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mlflow tensorflow scikit-learn matplotlib cloudpickle
+          pip install "numpy<2.0" "tensorflow==2.18.0" "mlflow==2.19.0" scikit-learn matplotlib cloudpickle mlserver
 
       # 5. Set MLflow Tracking URI (Local artifacts)
       - name: Set MLflow Tracking URI
@@ -40,7 +40,7 @@ jobs:
       # 6. Run mlflow project
       - name: Run mlflow project
         run: |
-          mlflow run MLProject --no-conda
+          mlflow run MLProject --env-manager local
 
       # 7. Get latest MLflow run_id
       - name: Get latest MLflow run_id
